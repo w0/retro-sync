@@ -7,11 +7,8 @@ import (
 func (app *application) routes() *http.ServeMux {
 
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		w.Write([]byte("What a nice server."))
-	})
+	mux.HandleFunc("POST /api/saves", app.UploadSave)
+	mux.HandleFunc("GET /api/saves", app.GetSave)
 
 	return mux
 }

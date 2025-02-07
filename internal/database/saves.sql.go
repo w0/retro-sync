@@ -33,3 +33,24 @@ func (q *Queries) CreateSave(ctx context.Context, arg CreateSaveParams) (Safe, e
 	)
 	return i, err
 }
+
+const getSave = `-- name: GetSave :one
+SELECT
+    id, created_at, updated_at, filepath
+FROM
+    saves
+where
+    id = ?
+`
+
+func (q *Queries) GetSave(ctx context.Context, id int64) (Safe, error) {
+	row := q.db.QueryRowContext(ctx, getSave, id)
+	var i Safe
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Filepath,
+	)
+	return i, err
+}
