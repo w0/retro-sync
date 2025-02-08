@@ -4,11 +4,11 @@ import (
 	"net/http"
 )
 
-func (app *application) routes() *http.ServeMux {
+func (app *application) routes() http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/saves", app.UploadSave)
 	mux.HandleFunc("GET /api/saves", app.GetSave)
 
-	return mux
+	return app.logger(mux)
 }
