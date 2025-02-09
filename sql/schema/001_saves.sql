@@ -1,4 +1,4 @@
--- +goose up
+-- +goose Up
 CREATE TABLE saves (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT NOT NULL,
@@ -7,5 +7,5 @@ CREATE TABLE saves (
     filepath TEXT NOT NULL
 );
 
--- +goose down
+-- +goose Down
 DROP TABLE saves;
