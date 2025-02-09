@@ -48,6 +48,8 @@ func (app *application) UploadSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer saveFile.Close()
+
 	_, err = io.Copy(saveFile, save)
 
 	if err != nil {
