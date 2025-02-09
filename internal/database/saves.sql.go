@@ -11,32 +11,39 @@ import (
 
 const createSave = `-- name: CreateSave :one
 INSERT INTO
-    saves (created_at, updated_at, filepath)
+    saves (created_at, updated_at, system_id, filename)
 VALUES
-    (?, ?, ?) RETURNING id, created_at, updated_at, filepath
+    (?, ?, ?, ?) RETURNING id, created_at, updated_at, system_id, filename
 `
 
 type CreateSaveParams struct {
 	CreatedAt string
 	UpdatedAt string
-	Filepath  string
+	SystemID  string
+	Filename  string
 }
 
 func (q *Queries) CreateSave(ctx context.Context, arg CreateSaveParams) (Safe, error) {
-	row := q.db.QueryRowContext(ctx, createSave, arg.CreatedAt, arg.UpdatedAt, arg.Filepath)
+	row := q.db.QueryRowContext(ctx, createSave,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.SystemID,
+		arg.Filename,
+	)
 	var i Safe
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Filepath,
+		&i.SystemID,
+		&i.Filename,
 	)
 	return i, err
 }
 
 const getSave = `-- name: GetSave :one
 SELECT
-    id, created_at, updated_at, filepath
+    id, created_at, updated_at, system_id, filename
 FROM
     saves
 where
@@ -50,7 +57,8 @@ func (q *Queries) GetSave(ctx context.Context, id int64) (Safe, error) {
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Filepath,
+		&i.SystemID,
+		&i.Filename,
 	)
 	return i, err
 }

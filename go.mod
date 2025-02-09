@@ -2,7 +2,10 @@ module github.com/w0/retro-sync
 
 go 1.23.6
 
-require modernc.org/sqlite v1.34.5
+require (
+	github.com/joho/godotenv v1.5.1
+	modernc.org/sqlite v1.34.5
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect

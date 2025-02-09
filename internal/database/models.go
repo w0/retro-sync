@@ -8,5 +8,6 @@ type Safe struct {
 	ID        int64
 	CreatedAt string
 	UpdatedAt string
-	Filepath  string
+	SystemID  string
+	Filename  string
 }

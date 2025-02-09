@@ -5,12 +5,22 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/w0/retro-sync/internal/database"
+	"github.com/w0/retro-sync/internal/parser"
 )
 
 func (app *application) UploadSave(w http.ResponseWriter, r *http.Request) {
+	systemId := r.FormValue("systemId")
+
+	_, err := parser.ValidatePlatform(systemId)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "", err)
+		return
+	}
+
 	save, header, err := r.FormFile("save")
 
 	if err != nil {
@@ -18,25 +28,40 @@ func (app *application) UploadSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmp, err := os.CreateTemp("", header.Filename)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed creating temp file", err)
+	filePath := app.PathBuilder("saves", systemId, header.Filename)
+	if filePath == "" {
+		respondWithError(w, http.StatusInternalServerError, "filePath is empty", err)
 		return
 	}
 
-	defer tmp.Close()
+	if _, err := os.Stat(filePath); err != nil {
+		err := os.MkdirAll(path.Dir(filePath), 0755)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "failed to create save path", err)
+			return
+		}
+	}
 
-	_, err = io.Copy(tmp, save)
+	saveFile, err := os.Create(filePath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to create file", err)
+		return
+	}
+
+	_, err = io.Copy(saveFile, save)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed copying save data", err)
 		return
 	}
 
+	now := time.Now()
+
 	dbSave, err := app.db.CreateSave(r.Context(), database.CreateSaveParams{
-		CreatedAt: time.Now().String(),
-		UpdatedAt: time.Now().String(),
-		Filepath:  tmp.Name(),
+		CreatedAt: now.Format(time.RFC3339),
+		UpdatedAt: now.Format(time.RFC3339),
+		SystemID:  systemId,
+		Filename:  path.Base(filePath),
 	})
 
 	if err != nil {

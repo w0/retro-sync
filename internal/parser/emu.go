@@ -1,5 +1,9 @@
 package parser
 
+import (
+	"fmt"
+)
+
 var platforms = map[string]string{
 	"3do":             "3DO",
 	"ags":             "Adventure Game Studio Game Engine",
@@ -158,4 +162,13 @@ var platforms = map[string]string{
 	"zmachine":        "Infocom Z-machine",
 	"zx81":            "Sinclair ZX81",
 	"zxspectrum":      "Sinclair ZX Spectrum",
+}
+
+func ValidatePlatform(ident string) (string, error) {
+	platform, ok := platforms[ident]
+	if !ok {
+		return "", fmt.Errorf("invalid platform identifier %s", ident)
+	}
+
+	return platform, nil
 }

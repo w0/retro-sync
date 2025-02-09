@@ -1,0 +1,5 @@
+$ROOT_FOLDER
+.
+├── bios
+├── roms
+└── saves
