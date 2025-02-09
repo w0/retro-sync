@@ -4,7 +4,7 @@ CREATE TABLE saves (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     system_id TEXT NOT NULL,
-    filepath TEXT NOT NULL
+    relative_path TEXT NOT NULL
 );
 
 -- +goose Down
