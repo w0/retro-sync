@@ -1,8 +1,8 @@
 -- name: CreateSave :one
 INSERT INTO
-    saves (created_at, updated_at, filepath)
+    saves (created_at, updated_at, system_id, filepath)
 VALUES
-    (?, ?, ?) RETURNING *;
+    (?, ?, ?, ?) RETURNING *;
 
 -- name: GetSave :one
 SELECT
