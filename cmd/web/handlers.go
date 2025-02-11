@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -127,5 +128,45 @@ func (app *application) GetSaves(w http.ResponseWriter, r *http.Request) {
 	})
 
 	respondWithJson(w, http.StatusOK, dbSaves)
+
+}
+
+func (app *application) DownloadSave(w http.ResponseWriter, r *http.Request) {
+	saveId := r.PathValue("saveId")
+
+	app.logger.Info("serving save file", "saveId", saveId)
+
+	saveInt, err := strconv.ParseInt(saveId, 10, 64)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid path value", err)
+		return
+	}
+
+	dbSave, err := app.db.GetSaveByID(r.Context(), saveInt)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "save not found", err)
+		return
+	}
+
+	localPath := app.PathBuilder("saves", dbSave.SystemID, dbSave.Filename)
+
+	localSave, err := os.Open(localPath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "file not found", err)
+		return
+	}
+
+	defer localSave.Close()
+
+	saveStat, err := os.Stat(localSave.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error reading file", err)
+		return
+	}
+
+	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", dbSave.Filename))
+	w.Header().Add("Cache-Control", "no-cache")
+
+	http.ServeContent(w, r, dbSave.Filename, saveStat.ModTime(), localSave)
 
 }
