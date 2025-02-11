@@ -4,10 +4,15 @@
 
 package database
 
+import (
+	"database/sql"
+)
+
 type Safe struct {
 	ID        int64
 	CreatedAt string
 	UpdatedAt string
 	SystemID  string
 	Filename  string
+	Md5Hash   sql.NullString
 }

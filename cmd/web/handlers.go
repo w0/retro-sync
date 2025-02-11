@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/w0/retro-sync/internal/database"
@@ -76,20 +76,17 @@ func (app *application) UploadSave(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) GetSave(w http.ResponseWriter, r *http.Request) {
-	type save struct {
-		Id int `json:"id"`
-	}
+	saveId := r.PathValue("saveId")
 
-	decoder := json.NewDecoder(r.Body)
-	var s save
-	err := decoder.Decode(&s)
+	app.logger.Debug("getting save by id", "saveId", saveId)
 
+	saveInt, err := strconv.ParseInt(saveId, 10, 64)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "unexpected data in payload", err)
+		respondWithError(w, http.StatusBadRequest, "invalid save id", err)
 		return
 	}
 
-	dbSave, err := app.db.GetSave(r.Context(), int64(s.Id))
+	dbSave, err := app.db.GetSaveByID(r.Context(), saveInt)
 
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "save not found", err)
@@ -97,4 +94,38 @@ func (app *application) GetSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusOK, dbSave)
+}
+
+func (app *application) GetSaves(w http.ResponseWriter, r *http.Request) {
+	queryValues := r.URL.Query()
+
+	page := queryValues.Get("page")
+	if page == "" {
+		page = "0"
+	}
+
+	pageSize := queryValues.Get("page-size")
+	if pageSize == "" {
+		pageSize = "100"
+	}
+
+	pageInt, err := strconv.ParseInt(page, 10, 64)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid page", err)
+		return
+	}
+
+	pageSizeInt, err := strconv.ParseInt(pageSize, 10, 64)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid page-size", err)
+		return
+	}
+
+	dbSaves, err := app.db.GetSaves(r.Context(), database.GetSavesParams{
+		Offset: pageInt,
+		Limit:  pageSizeInt,
+	})
+
+	respondWithJson(w, http.StatusOK, dbSaves)
+
 }

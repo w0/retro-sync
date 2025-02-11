@@ -4,10 +4,20 @@ INSERT INTO
 VALUES
     (?, ?, ?, ?) RETURNING *;
 
--- name: GetSave :one
+-- name: GetSaveByID :one
 SELECT
     *
 FROM
     saves
 where
     id = ?;
+
+-- name: GetSaves :many
+select
+    *
+from
+    saves
+LIMIT
+    ?
+OFFSET
+    ?;
