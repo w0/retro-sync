@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,23 +14,79 @@ import (
 	"github.com/w0/retro-sync/internal/parser"
 )
 
-func (app *application) UploadSave(w http.ResponseWriter, r *http.Request) {
-	systemId := r.FormValue("systemId")
+func (app *application) CreateSave(w http.ResponseWriter, r *http.Request) {
 
-	_, err := parser.ValidatePlatform(systemId)
+	type newSave struct {
+		Filename   string `json:"fileName"`
+		FileMd5    string `json:"md5"`
+		PlatformId string `json:"platformId"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var saveReq newSave
+	err := decoder.Decode(&saveReq)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid json body", err)
+		return
+	}
+
+	_, err = parser.ValidatePlatform(saveReq.PlatformId)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "", err)
 		return
 	}
 
-	save, header, err := r.FormFile("save")
+	now := time.Now()
+
+	dbSave, err := app.db.CreateSave(r.Context(), database.CreateSaveParams{
+		CreatedAt: now.Format(time.RFC3339),
+		UpdatedAt: now.Format(time.RFC3339),
+		SystemID:  saveReq.PlatformId,
+		Filename:  saveReq.Filename,
+	})
 
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "form field save missing", err)
+		respondWithError(w, http.StatusInternalServerError, "failed to store save in database", err)
 		return
 	}
 
-	filePath := app.PathBuilder("saves", systemId, header.Filename)
+	type saveRes struct {
+		Id int64 `json:"id"`
+	}
+
+	respondWithJson(w, http.StatusCreated, saveRes{Id: dbSave.ID})
+
+}
+
+func (app *application) UploadSave(w http.ResponseWriter, r *http.Request) {
+	saveId := r.PathValue("id")
+
+	if saveId == "" {
+		respondWithError(w, http.StatusBadRequest, "missing save id", nil)
+		return
+	}
+
+	saveInt, err := strconv.ParseInt(saveId, 10, 64)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid path value", err)
+		return
+	}
+
+	dbSave, err := app.db.GetSaveByID(r.Context(), saveInt)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "save not found", err)
+		return
+	}
+
+	save, _, err := r.FormFile("file")
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "form field file missing", err)
+		return
+	}
+
+	filePath := app.PathBuilder("saves", dbSave.SystemID, dbSave.Filename)
 	if filePath == "" {
 		respondWithError(w, http.StatusInternalServerError, "filePath is empty", err)
 		return
@@ -58,28 +115,12 @@ func (app *application) UploadSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	now := time.Now()
-
-	dbSave, err := app.db.CreateSave(r.Context(), database.CreateSaveParams{
-		CreatedAt: now.Format(time.RFC3339),
-		UpdatedAt: now.Format(time.RFC3339),
-		SystemID:  systemId,
-		Filename:  path.Base(filePath),
-	})
-
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to store save in database", err)
-		return
-	}
-
-	respondWithJson(w, http.StatusOK, dbSave)
-
 }
 
 func (app *application) GetSave(w http.ResponseWriter, r *http.Request) {
-	saveId := r.PathValue("saveId")
+	saveId := r.PathValue("id")
 
-	app.logger.Debug("getting save by id", "saveId", saveId)
+	app.logger.Debug("getting save by id", "id", saveId)
 
 	saveInt, err := strconv.ParseInt(saveId, 10, 64)
 	if err != nil {
@@ -132,9 +173,9 @@ func (app *application) GetSaves(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) DownloadSave(w http.ResponseWriter, r *http.Request) {
-	saveId := r.PathValue("saveId")
+	saveId := r.PathValue("id")
 
-	app.logger.Info("serving save file", "saveId", saveId)
+	app.logger.Info("serving save file", "id", saveId)
 
 	saveInt, err := strconv.ParseInt(saveId, 10, 64)
 	if err != nil {
