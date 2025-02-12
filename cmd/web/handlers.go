@@ -17,9 +17,9 @@ import (
 func (app *application) CreateSave(w http.ResponseWriter, r *http.Request) {
 
 	type newSave struct {
-		Filename   string `json:"fileName"`
-		FileMd5    string `json:"md5"`
-		PlatformId string `json:"platformId"`
+		Filename string `json:"fileName"`
+		FileMd5  string `json:"md5"`
+		SystemId string `json:"systemId"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -31,7 +31,7 @@ func (app *application) CreateSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = parser.ValidatePlatform(saveReq.PlatformId)
+	_, err = parser.ValidateSystem(saveReq.SystemId)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "", err)
 		return
@@ -42,7 +42,7 @@ func (app *application) CreateSave(w http.ResponseWriter, r *http.Request) {
 	dbSave, err := app.db.CreateSave(r.Context(), database.CreateSaveParams{
 		CreatedAt: now.Format(time.RFC3339),
 		UpdatedAt: now.Format(time.RFC3339),
-		SystemID:  saveReq.PlatformId,
+		SystemID:  saveReq.SystemId,
 		Filename:  saveReq.Filename,
 	})
 

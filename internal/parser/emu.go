@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-var platforms = map[string]string{
+var systems = map[string]string{
 	"3do":             "3DO",
 	"ags":             "Adventure Game Studio Game Engine",
 	"amiga":           "Commodore Amiga",
@@ -164,10 +164,10 @@ var platforms = map[string]string{
 	"zxspectrum":      "Sinclair ZX Spectrum",
 }
 
-func ValidatePlatform(ident string) (string, error) {
-	platform, ok := platforms[ident]
+func ValidateSystem(ident string) (string, error) {
+	platform, ok := systems[ident]
 	if !ok {
-		return "", fmt.Errorf("invalid platform identifier %s", ident)
+		return "", fmt.Errorf("invalid system identifier %s", ident)
 	}
 
 	return platform, nil
