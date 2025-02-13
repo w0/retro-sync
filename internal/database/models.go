@@ -8,6 +8,15 @@ import (
 	"database/sql"
 )
 
+type Game struct {
+	ID        int64
+	CreatedAt string
+	UpdatedAt string
+	SystemID  string
+	Filename  string
+	Md5Hash   sql.NullString
+}
+
 type Safe struct {
 	ID        int64
 	CreatedAt string

@@ -211,3 +211,47 @@ func (app *application) DownloadSave(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, dbSave.Filename, saveStat.ModTime(), localSave)
 
 }
+
+func (app *application) CreateGame(w http.ResponseWriter, r *http.Request) {
+	type gameReq struct {
+		Filename string `json:"fileName"`
+		FileMd5  string `json:"md5"`
+		SystemId string `json:"systemId"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var game gameReq
+	err := decoder.Decode(&game)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid json body", err)
+		return
+	}
+
+	_, err = parser.ValidateSystem(game.SystemId)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "", err)
+		return
+	}
+
+	now := time.Now().Format(time.RFC3339)
+
+	dbGame, err := app.db.CreateGame(r.Context(), database.CreateGameParams{
+		CreatedAt: now,
+		UpdatedAt: now,
+		Filename:  game.Filename,
+		SystemID:  game.SystemId,
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to create game", err)
+		return
+	}
+
+	type gameRes struct {
+		Id int64 `json:"id"`
+	}
+
+	respondWithJson(w, http.StatusCreated, gameRes{Id: dbGame.ID})
+
+}

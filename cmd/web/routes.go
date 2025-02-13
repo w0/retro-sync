@@ -12,6 +12,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /api/v1/saves", app.GetSaves)
 	mux.HandleFunc("GET /api/v1/saves/{id}", app.GetSave)
 	mux.HandleFunc("GET /api/v1/downloads/saves/{id}", app.DownloadSave)
+	mux.HandleFunc("POST /api/v1/games", app.CreateGame)
 
 	return app.logRequest(mux)
 }
